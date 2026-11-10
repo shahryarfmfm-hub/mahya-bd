@@ -80,12 +80,12 @@ const BACKGROUND_FADE_START = Math.max(
 
 const TYPED_LINES = [
   "> Mahya",
+  "emroz roze",
+  "> tavalodeteeee",
+  "pas manam baraye khoshgel-tarin dokhtare donya",
+  ">  ye chi koochoolo daram! ♡",
   "...",
-  "> NANA emroz roze tavalodete",
-  "...",
-  "> manam baraye khoshgel-tarin dokhtare donya ye surprise koochooloo daram! ♡",
-  "...",
-  "Mahya, my pretty girl ♡ (づ￣ ³￣)づ "
+  "my pretty girl ♡ (づ￣ ³￣)づ "
 ];
 const TYPED_CHAR_DELAY = 100;
 const POST_TYPING_SCENE_DELAY = 1000;

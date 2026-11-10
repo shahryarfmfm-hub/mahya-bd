@@ -58,10 +58,12 @@ const totalAnimationTime = CANDLE_DROP_START + CANDLE_DROP_DURATION;
 
 const ORBIT_TARGET = new Vector3(0, 1, 0);
 const ORBIT_INITIAL_RADIUS = 3;
+// On tall/narrow screens (phones) the camera starts a bit further back
+const ORBIT_INITIAL_RADIUS_PORTRAIT = 5.5;
 const ORBIT_INITIAL_HEIGHT = 1;
 const ORBIT_INITIAL_AZIMUTH = Math.PI / 2;
 const ORBIT_MIN_DISTANCE = 2;
-const ORBIT_MAX_DISTANCE = 8;
+const ORBIT_MAX_DISTANCE = 9;
 const ORBIT_MIN_POLAR = Math.PI * 0;
 const ORBIT_MAX_POLAR = Math.PI / 2;
 
@@ -316,10 +318,15 @@ function ConfiguredOrbitControls() {
   const camera = useThree((state) => state.camera);
 
   useEffect(() => {
+    const isPortrait = window.innerHeight > window.innerWidth;
+    const radius = isPortrait
+      ? ORBIT_INITIAL_RADIUS_PORTRAIT
+      : ORBIT_INITIAL_RADIUS;
+
     const offset = new Vector3(
-      Math.sin(ORBIT_INITIAL_AZIMUTH) * ORBIT_INITIAL_RADIUS,
+      Math.sin(ORBIT_INITIAL_AZIMUTH) * radius,
       ORBIT_INITIAL_HEIGHT,
-      Math.cos(ORBIT_INITIAL_AZIMUTH) * ORBIT_INITIAL_RADIUS
+      Math.cos(ORBIT_INITIAL_AZIMUTH) * radius
     );
     const cameraPosition = ORBIT_TARGET.clone().add(offset);
     camera.position.copy(cameraPosition);
@@ -486,26 +493,31 @@ export default function App() {
     return () => window.clearInterval(handle);
   }, []);
 
+  // Start the show / blow out the candle (used by both Space key and tap)
+  const handleAction = useCallback(() => {
+    if (!hasStarted) {
+      playBackgroundMusic();
+      setHasStarted(true);
+      return;
+    }
+    if (hasAnimationCompleted && isCandleLit) {
+      setIsCandleLit(false);
+      setFireworksActive(true);
+    }
+  }, [hasStarted, hasAnimationCompleted, isCandleLit, playBackgroundMusic]);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.code !== "Space" && event.key !== " ") {
         return;
       }
       event.preventDefault();
-      if (!hasStarted) {
-        playBackgroundMusic();
-        setHasStarted(true);
-        return;
-      }
-      if (hasAnimationCompleted && isCandleLit) {
-        setIsCandleLit(false);
-        setFireworksActive(true);
-      }
+      handleAction();
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [hasStarted, hasAnimationCompleted, isCandleLit, playBackgroundMusic]);
+  }, [handleAction]);
 
   const handleCardToggle = useCallback((id: string) => {
     setActiveCardId((current) => (current === id ? null : id));
@@ -514,7 +526,15 @@ export default function App() {
   const isScenePlaying = hasStarted && sceneStarted;
 
   return (
-    <div className="App">
+    <div
+      className="App"
+      onClick={() => {
+        // Tap anywhere to start (phones have no Space key)
+        if (!hasStarted) {
+          handleAction();
+        }
+      }}
+    >
       <div
         className="background-overlay"
         style={{ opacity: backgroundOpacity }}
@@ -538,12 +558,24 @@ export default function App() {
           })}
         </div>
       </div>
+      {!hasStarted && (
+        <div className="hint-overlay" style={{ zIndex: 10 }}>
+          tap to start
+        </div>
+      )}
       {hasAnimationCompleted && isCandleLit && (
-        <div className="hint-overlay">press space to blow out the candle</div>
+        <div
+          className="hint-overlay"
+          style={{ pointerEvents: "auto", zIndex: 10, cursor: "pointer" }}
+          onClick={handleAction}
+        >
+          tap here to blow out the candle
+        </div>
       )}
       <Canvas
+        dpr={[1, 2]}
         gl={{ alpha: true }}
-        style={{ background: "transparent" }}
+        style={{ background: "transparent", touchAction: "none" }}
         onCreated={({ gl }) => {
           gl.setClearColor("#000000", 0);
         }}
